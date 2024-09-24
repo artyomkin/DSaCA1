@@ -1,5 +1,11 @@
 package classes;
 
+import com.github.fluency03.varint.Varint;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+
 public class Person {
     private String name;
     private String lastName;
@@ -7,9 +13,19 @@ public class Person {
     private Integer height;
 
     private static String SERIALIZATION_PROTOCOL_NAME = "TEAA";
-    private static e SERIALIZATION_PROTOCOL_MAJOR_VERSION = 0;
-    private static byte SERIALIZATION_PROTOCOL_MINOR_VERSION = 0;
-    private static byte SERIALIZATION_PROTOCOL_PATCH_VERSION = 1;
+    private static int SERIALIZATION_PROTOCOL_MAJOR_VERSION = 0;
+    private static int SERIALIZATION_PROTOCOL_MINOR_VERSION = 0;
+    private static int SERIALIZATION_PROTOCOL_PATCH_VERSION = 1;
+    private static byte[] serializationProtocolName = SERIALIZATION_PROTOCOL_NAME.getBytes();
+    private static byte[] serializationMajorVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_MAJOR_VERSION);
+    private static byte[] serializationMinorVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_MINOR_VERSION);
+    private static byte[] serializationPatchVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_PATCH_VERSION);
+    private static List<byte[]> defaultHeaders = List.of(
+            serializationProtocolName,
+            serializationMajorVersion,
+            serializationMinorVersion,
+            serializationPatchVersion
+    );
 
     private Person(Builder builder){
         this.name = builder.name;
@@ -34,8 +50,32 @@ public class Person {
         return height;
     }
 
-    public byte[] toBytes() {
+    private byte[] initFileHeaderToBytes() {
+        int fullHeaderLength = defaultHeaders.stream()
+                .map(header -> header.length)
+                .reduce(0, Integer::sum);
+        return new byte[fullHeaderLength];
+    }
 
+    private byte[] fileHeaderToBytes() {
+        byte[] fileHeader = initFileHeaderToBytes();
+
+        int bytePointer = 0;
+        for (byte[] header : defaultHeaders){
+            System.arraycopy(header, 0, fileHeader, bytePointer, header.length);
+            bytePointer += header.length;
+        }
+        return fileHeader;
+    }
+
+    private <T> byte[] fieldToBytes(Field field, T value) {
+        // do serialization
+        return null;
+    }
+
+    private byte[] toBytes() {
+        byte[] fileHeader = fileHeaderToBytes();
+        return fileHeader;
     }
 
     @Override
