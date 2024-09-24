@@ -50,6 +50,8 @@ public class Person {
         return height;
     }
 
+    // лучше переместить всю эту логику ниже в Builder
+
     private byte[] initFileHeaderToBytes() {
         int fullHeaderLength = defaultHeaders.stream()
                 .map(header -> header.length)
