@@ -6,26 +6,22 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.nio.file.Files.readAllBytes;
+
 public class Main {
     public static void main(String... args) throws IOException, IllegalAccessException {
-        Object p = new Person[]{new Person.Builder()
-                .setName("A")
-                .setLastName("B")
-                .setHeight(123)
-                .setAge(123)
-                .build()};
-
-        List<Integer> a = new ArrayList<Integer>();
-        a.add(1);
-        a.add(2);
-        Field[] fields = a.getClass().getDeclaredFields();
-        for (Field field : fields){
-            if (!Modifier.isStatic(field.getModifiers())){
-                System.out.println(field.getName());
-                field.setAccessible(tru);
-                System.out.println(field.get(a));
-            }
+        Person p = new Person.Builder()
+                .setName("some-name")
+                .setLastName("some-lastname")
+                .setHeight(1123)
+                .setAge(1231212)
+                .build();
+        p.writeToFile("./serialized-person");
+        FileInputStream fis = new FileInputStream("./serialized-person");
+        byte[] bytes = fis.readAllBytes();
+        for (byte b : bytes){
+            System.out.println("byte: " + b);
         }
-        //System.out.println(p instanceof Object[]);
+
     }
 }

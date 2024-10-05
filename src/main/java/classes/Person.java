@@ -1,11 +1,15 @@
 package classes;
 
 import com.github.fluency03.varint.Varint;
+import exceptions.CannotSerializeFieldException;
 import scala.util.control.Exception;
 
+import java.io.*;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Person implements HasdSerializable {
@@ -71,32 +75,39 @@ public class Person implements HasdSerializable {
     }
 
     private byte[] shortToBytes(short number){
-        return ByteBuffer.allocate(2).putInt(number).array();
+        return ByteBuffer.allocate(Short.BYTES).putInt(number).array();
     }
 
     private byte[] intToBytes(int number){
-        return ByteBuffer.allocate(4).putInt(number).array();
+        return ByteBuffer.allocate(Integer.BYTES).putInt(number).array();
     }
 
     private byte[] longToBytes(long number) {
-        return ByteBuffer.allocate(8).putLong(number).array();
+        return ByteBuffer.allocate(Long.BYTES).putLong(number).array();
     }
 
     private byte[] floatToBytes(float number) {
-        return ByteBuffer.allocate(4).putFloat(number).array();
+        return ByteBuffer.allocate(Float.BYTES).putFloat(number).array();
     }
 
     private byte[] doubleToBytes(double number) {
-        return ByteBuffer.allocate(8).putDouble(number).array();
+        return ByteBuffer.allocate(Double.BYTES).putDouble(number).array();
+    }
+
+    private byte[] insertLength(byte[] bytes){
+        byte[] lengthValue = Varint.encodeInt(bytes.length);
+        byte[] result = new byte[lengthValue.length + bytes.length];
+        System.arraycopy(lengthValue, 0, result, 0, lengthValue.length);
+        System.arraycopy(bytes, 0, result, lengthValue.length, bytes.length);
+        return result;
+    }
+
+    private byte[] hasdSerializableToBytes(HasdSerializable hasdSerializable){
+        return insertLength(hasdSerializable.serializeWithoutHeaders());
     }
 
     private byte[] stringToBytes(String str) {
-        int len = str.getBytes().length;
-        byte[] strLength = Varint.encodeInt(len);
-        byte[] result = new byte[strLength.length + len];
-        System.arraycopy(strLength, 0, result, 0, strLength.length);
-        System.arraycopy(str.getBytes(), 0, result, strLength.length, len);
-        return result;
+        return insertLength(str.getBytes());
     }
 
     private byte booleanToBytes(boolean bool) {
@@ -104,7 +115,67 @@ public class Person implements HasdSerializable {
     }
 
     private byte[] charToBytes(char c) {
-        return ByteBuffer.allocate(2).putChar(c).array();
+        return ByteBuffer.allocate(Character.BYTES).putChar(c).array();
+    }
+
+    private byte[] serializeField(Class fieldType, Object fieldValue) throws CannotSerializeFieldException{
+        if (fieldType.equals(Boolean.class) || fieldType.equals(boolean.class)) {
+            return new byte[]{booleanToBytes((boolean) fieldValue)};
+        } else if (fieldType.equals(Short.class) || fieldType.equals(short.class)) {
+            return shortToBytes((short) fieldValue);
+        } else if (fieldType.equals(Integer.class) || fieldType.equals(int.class)) {
+            return intToBytes((int) fieldValue);
+        } else if (fieldType.equals(Long.class) || fieldType.equals(long.class)) {
+            return longToBytes((long) fieldValue);
+        } else if (fieldType.equals(Double.class) || fieldType.equals(double.class)) {
+            return doubleToBytes((double) fieldValue);
+        } else if (fieldType.equals(Float.class) || fieldType.equals(float.class)) {
+            return floatToBytes((float) fieldValue);
+        } else if (fieldType.equals(Character.class) || fieldType.equals(char.class)) {
+            return charToBytes((char) fieldValue);
+        } else if (fieldType.equals(String.class)) {
+            return stringToBytes((String) fieldValue);
+        } else if (fieldType.equals(HasdSerializable.class)) {
+            return hasdSerializableToBytes((HasdSerializable) fieldValue);
+        } else {
+            throw new CannotSerializeFieldException("Cannot serialize field with type " + fieldType.getName());
+        }
+    }
+
+    private int getTotalFieldsLength(List<byte[]> serializedFields) {
+        return serializedFields.stream()
+                .map(fieldBytes -> fieldBytes.length)
+                .reduce(Integer::sum).get();
+    }
+
+    private byte[] flattenSerializedFields(List<byte[]> serializedFields) {
+        byte[] serializedObject = new byte[getTotalFieldsLength(serializedFields)];
+        int copyPosition = 0;
+        for (byte[] serializedField : serializedFields) {
+            System.arraycopy(serializedField, 0, serializedObject, copyPosition, serializedField.length);
+            copyPosition += serializedField.length;
+        }
+        return serializedObject;
+    }
+
+    @Override
+    public byte[] serializeWithoutHeaders() {
+        Field[] fields = this.getClass().getDeclaredFields();
+        List<byte[]> serializedFields = new ArrayList<>();
+        for (Field field : fields) {
+            if (Modifier.isStatic(field.getModifiers()) || Modifier.isTransient(field.getModifiers())) {
+                continue;
+            }
+            field.setAccessible(true);
+            Class fieldType = field.getType();
+            try {
+                Object fieldValue = field.get(this);
+                serializedFields.add(serializeField(fieldType, fieldValue));
+            } catch (IllegalAccessException | CannotSerializeFieldException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+        return flattenSerializedFields(serializedFields);
     }
 
     @Override
@@ -118,16 +189,10 @@ public class Person implements HasdSerializable {
     }
 
     @Override
-    public byte[] serializeWithoutHeaders() {
-        // здесь должен генерироваться код
-        // для каждого поля вызывается свой метод из перечисленных выше, если поле - это примитив
-        // если поле - объект HasdSerializable - для него должен вызываться serializeWithoutHeaders
-        // каждый генерируемый класс должен реализовывать интерфейс HasdSerializable
-        // если поле не принадлежит интерфейсу HasdSerializable, оно не должно сериализовываться
-        // если поле - это массив - пока этот случай не рассмотрен, это остается в TODO.
-        return new byte[0];
+    public void writeToFile(String path) throws IOException {
+        FileOutputStream fos = new FileOutputStream(path);
+        fos.write(this.serialize());
     }
-
 
     @Override
     public String toString(){
@@ -171,6 +236,18 @@ public class Person implements HasdSerializable {
 
         public Person build() {
             return new Person(this);
+        }
+
+        public Person deserialize(byte[] serializedPerson){
+            // Здесь должен генерироваться код десериализации объекта из байтов
+            return null;
+        }
+
+        public Person readFromFile(String path) throws IOException {
+            FileInputStream fis = new FileInputStream(path);
+            Person person = deserialize(fis.readAllBytes());
+            fis.close();
+            return person;
         }
 
     }
