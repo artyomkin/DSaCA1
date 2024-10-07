@@ -2,14 +2,12 @@ package classes;
 
 import com.github.fluency03.varint.Varint;
 import exceptions.CannotSerializeFieldException;
-import scala.util.control.Exception;
 
 import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class Person implements HasdSerializable {
@@ -17,6 +15,14 @@ public class Person implements HasdSerializable {
     private String lastName;
     private int age;
     private Integer height;
+    private short shortVal;
+    private byte byteVal;
+    private long longVal;
+    private double doubleVal;
+    private float floatVal;
+    private boolean booleanVal;
+    private char charVal;
+    private HasdSerializable childPerson;
 
     private static String SERIALIZATION_PROTOCOL_NAME = "TEAA";
     private static int SERIALIZATION_PROTOCOL_MAJOR_VERSION = 0;
@@ -33,11 +39,19 @@ public class Person implements HasdSerializable {
             serializationPatchVersion
     );
 
-    private Person(Builder builder){
+    public Person(Builder builder) {
         this.name = builder.name;
         this.lastName = builder.lastName;
         this.age = builder.age;
         this.height = builder.height;
+        this.shortVal = builder.shortVal;
+        this.byteVal = builder.byteVal;
+        this.longVal = builder.longVal;
+        this.doubleVal = builder.doubleVal;
+        this.floatVal = builder.floatVal;
+        this.booleanVal = builder.booleanVal;
+        this.charVal = builder.charVal;
+        this.childPerson = builder.childPerson;
     }
 
     public String getName() {
@@ -75,7 +89,7 @@ public class Person implements HasdSerializable {
     }
 
     private byte[] shortToBytes(short number){
-        return ByteBuffer.allocate(Short.BYTES).putInt(number).array();
+        return ByteBuffer.allocate(Short.BYTES).putShort(number).array();
     }
 
     private byte[] intToBytes(int number){
@@ -94,6 +108,14 @@ public class Person implements HasdSerializable {
         return ByteBuffer.allocate(Double.BYTES).putDouble(number).array();
     }
 
+    private byte booleanToBytes(boolean bool) {
+        return (byte) (bool ? 1 : 0);
+    }
+
+    private byte[] charToBytes(char c) {
+        return ByteBuffer.allocate(Character.BYTES).putChar(c).array();
+    }
+
     private byte[] insertLength(byte[] bytes){
         byte[] lengthValue = Varint.encodeInt(bytes.length);
         byte[] result = new byte[lengthValue.length + bytes.length];
@@ -108,14 +130,6 @@ public class Person implements HasdSerializable {
 
     private byte[] stringToBytes(String str) {
         return insertLength(str.getBytes());
-    }
-
-    private byte booleanToBytes(boolean bool) {
-        return (byte) (bool ? 1 : 0);
-    }
-
-    private byte[] charToBytes(char c) {
-        return ByteBuffer.allocate(Character.BYTES).putChar(c).array();
     }
 
     private byte[] serializeField(Class fieldType, Object fieldValue) throws CannotSerializeFieldException{
@@ -133,6 +147,8 @@ public class Person implements HasdSerializable {
             return floatToBytes((float) fieldValue);
         } else if (fieldType.equals(Character.class) || fieldType.equals(char.class)) {
             return charToBytes((char) fieldValue);
+        } else if (fieldType.equals(Byte.class) || fieldType.equals(byte.class)) {
+            return new byte[]{ (byte) fieldValue };
         } else if (fieldType.equals(String.class)) {
             return stringToBytes((String) fieldValue);
         } else if (fieldType.equals(HasdSerializable.class)) {
@@ -170,7 +186,9 @@ public class Person implements HasdSerializable {
             Class fieldType = field.getType();
             try {
                 Object fieldValue = field.get(this);
-                serializedFields.add(serializeField(fieldType, fieldValue));
+                if (fieldValue != null){
+                    serializedFields.add(serializeField(fieldType, fieldValue));
+                }
             } catch (IllegalAccessException | CannotSerializeFieldException e) {
                 System.out.println(e.getMessage());
             }
@@ -213,6 +231,14 @@ public class Person implements HasdSerializable {
         private String lastName;
         private int age;
         private Integer height;
+        private short shortVal;
+        private byte byteVal;
+        private long longVal;
+        private double doubleVal;
+        private float floatVal;
+        private boolean booleanVal;
+        private char charVal;
+        private HasdSerializable childPerson;
 
         public Builder setName(String name) {
             this.name = name;
@@ -231,6 +257,46 @@ public class Person implements HasdSerializable {
 
         public Builder setHeight(Integer height) {
             this.height = height;
+            return this;
+        }
+
+        public Builder setShortVal(short shortVal) {
+            this.shortVal = shortVal;
+            return this;
+        }
+
+        public Builder setByteVal(byte byteVal) {
+            this.byteVal = byteVal;
+            return this;
+        }
+
+        public Builder setLongVal(long longVal) {
+            this.longVal = longVal;
+            return this;
+        }
+
+        public Builder setDoubleVal(double doubleVal) {
+            this.doubleVal = doubleVal;
+            return this;
+        }
+
+        public Builder setFloatVal(float floatVal) {
+            this.floatVal = floatVal;
+            return this;
+        }
+
+        public Builder setBooleanVal(boolean booleanVal) {
+            this.booleanVal = booleanVal;
+            return this;
+        }
+
+        public Builder setCharVal(char charVal) {
+            this.charVal = charVal;
+            return this;
+        }
+
+        public Builder setChildPerson(HasdSerializable childPerson){
+            this.childPerson = childPerson;
             return this;
         }
 
