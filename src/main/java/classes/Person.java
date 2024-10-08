@@ -8,6 +8,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class Person implements HasdSerializable {
@@ -23,6 +24,9 @@ public class Person implements HasdSerializable {
     private boolean booleanVal;
     private char charVal;
     private HasdSerializable childPerson;
+    private List<Integer> intVals;
+    private List<String> stringVals;
+    private HashMap<Integer, String> mapVals;
 
     private static String SERIALIZATION_PROTOCOL_NAME = "TEAA";
     private static int SERIALIZATION_PROTOCOL_MAJOR_VERSION = 0;
@@ -52,6 +56,9 @@ public class Person implements HasdSerializable {
         this.booleanVal = builder.booleanVal;
         this.charVal = builder.charVal;
         this.childPerson = builder.childPerson;
+        this.intVals = builder.intVals;
+        this.stringVals = builder.stringVals;
+        this.mapVals = builder.mapVals;
     }
 
     public String getName() {
@@ -239,6 +246,9 @@ public class Person implements HasdSerializable {
         private boolean booleanVal;
         private char charVal;
         private HasdSerializable childPerson;
+        private List<Integer> intVals;
+        private List<String> stringVals;
+        private HashMap<Integer, String> mapVals;
 
         public Builder setName(String name) {
             this.name = name;
@@ -297,6 +307,21 @@ public class Person implements HasdSerializable {
 
         public Builder setChildPerson(HasdSerializable childPerson){
             this.childPerson = childPerson;
+            return this;
+        }
+
+        public Builder setIntVals(List<Integer> intVals){
+            this.intVals = intVals;
+            return this;
+        }
+
+        public Builder setStringVals(List<String> stringVals){
+            this.stringVals = stringVals;
+            return this;
+        }
+
+        public Builder setMapVals(HashMap<Integer, String> mapVals){
+            this.mapVals = mapVals;
             return this;
         }
 
