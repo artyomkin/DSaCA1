@@ -9,11 +9,11 @@ import java.util.List;
 public class Main {
     public static void main(String... args) throws IOException, IllegalAccessException {
         List<Integer> l = List.of(1,2,3,4,5);
-        List<String> s = List.of("asdfks", "lkfjsdl", "sdfjsdew", "oiudf");
+        List<String> s = List.of("l1", "l2", "l3", "l4");
         HashMap<Integer, String> m = new HashMap<Integer, String>();
-        m.put(12, "slkdf");
-        m.put(12312, "sdfslkdf");
-        m.put(1221, "xxxsslkdf");
+        m.put(1, "hashmap-item1");
+        m.put(2, "hashmap-item2");
+        m.put(3, "hashmap-item3");
         Person p = new Person.Builder()
                 .setIntVals(l)
                 .setStringVals(s)

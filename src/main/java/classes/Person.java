@@ -10,8 +10,9 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Stream;
 
-public class Person implements HasdSerializable {
+public class Person extends HasdSerializableImpl {
     private String name;
     private String lastName;
     private int age;
@@ -27,21 +28,6 @@ public class Person implements HasdSerializable {
     private List<Integer> intVals;
     private List<String> stringVals;
     private HashMap<Integer, String> mapVals;
-
-    private static String SERIALIZATION_PROTOCOL_NAME = "TEAA";
-    private static int SERIALIZATION_PROTOCOL_MAJOR_VERSION = 0;
-    private static int SERIALIZATION_PROTOCOL_MINOR_VERSION = 0;
-    private static int SERIALIZATION_PROTOCOL_PATCH_VERSION = 1;
-    private static byte[] serializationProtocolName = SERIALIZATION_PROTOCOL_NAME.getBytes();
-    private static byte[] serializationMajorVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_MAJOR_VERSION);
-    private static byte[] serializationMinorVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_MINOR_VERSION);
-    private static byte[] serializationPatchVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_PATCH_VERSION);
-    private static List<byte[]> defaultHeaders = List.of(
-            serializationProtocolName,
-            serializationMajorVersion,
-            serializationMinorVersion,
-            serializationPatchVersion
-    );
 
     public Person(Builder builder) {
         this.name = builder.name;
@@ -59,164 +45,6 @@ public class Person implements HasdSerializable {
         this.intVals = builder.intVals;
         this.stringVals = builder.stringVals;
         this.mapVals = builder.mapVals;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public int getAge() {
-        return age;
-    }
-
-    public Integer getHeight() {
-        return height;
-    }
-
-    private byte[] initFileHeaderToBytes() {
-        int fullHeaderLength = defaultHeaders.stream()
-                .map(header -> header.length)
-                .reduce(0, Integer::sum);
-        return new byte[fullHeaderLength];
-    }
-
-    private byte[] fileHeaderToBytes() {
-        byte[] fileHeader = initFileHeaderToBytes();
-
-        int bytePointer = 0;
-        for (byte[] header : defaultHeaders){
-            System.arraycopy(header, 0, fileHeader, bytePointer, header.length);
-            bytePointer += header.length;
-        }
-        return fileHeader;
-    }
-
-    private byte[] shortToBytes(short number){
-        return ByteBuffer.allocate(Short.BYTES).putShort(number).array();
-    }
-
-    private byte[] intToBytes(int number){
-        return ByteBuffer.allocate(Integer.BYTES).putInt(number).array();
-    }
-
-    private byte[] longToBytes(long number) {
-        return ByteBuffer.allocate(Long.BYTES).putLong(number).array();
-    }
-
-    private byte[] floatToBytes(float number) {
-        return ByteBuffer.allocate(Float.BYTES).putFloat(number).array();
-    }
-
-    private byte[] doubleToBytes(double number) {
-        return ByteBuffer.allocate(Double.BYTES).putDouble(number).array();
-    }
-
-    private byte booleanToBytes(boolean bool) {
-        return (byte) (bool ? 1 : 0);
-    }
-
-    private byte[] charToBytes(char c) {
-        return ByteBuffer.allocate(Character.BYTES).putChar(c).array();
-    }
-
-    private byte[] insertLength(byte[] bytes){
-        byte[] lengthValue = Varint.encodeInt(bytes.length);
-        byte[] result = new byte[lengthValue.length + bytes.length];
-        System.arraycopy(lengthValue, 0, result, 0, lengthValue.length);
-        System.arraycopy(bytes, 0, result, lengthValue.length, bytes.length);
-        return result;
-    }
-
-    private byte[] hasdSerializableToBytes(HasdSerializable hasdSerializable){
-        return insertLength(hasdSerializable.serializeWithoutHeaders());
-    }
-
-    private byte[] stringToBytes(String str) {
-        return insertLength(str.getBytes());
-    }
-
-    private byte[] serializeField(Class fieldType, Object fieldValue) throws CannotSerializeFieldException{
-        if (fieldType.equals(Boolean.class) || fieldType.equals(boolean.class)) {
-            return new byte[]{booleanToBytes((boolean) fieldValue)};
-        } else if (fieldType.equals(Short.class) || fieldType.equals(short.class)) {
-            return shortToBytes((short) fieldValue);
-        } else if (fieldType.equals(Integer.class) || fieldType.equals(int.class)) {
-            return intToBytes((int) fieldValue);
-        } else if (fieldType.equals(Long.class) || fieldType.equals(long.class)) {
-            return longToBytes((long) fieldValue);
-        } else if (fieldType.equals(Double.class) || fieldType.equals(double.class)) {
-            return doubleToBytes((double) fieldValue);
-        } else if (fieldType.equals(Float.class) || fieldType.equals(float.class)) {
-            return floatToBytes((float) fieldValue);
-        } else if (fieldType.equals(Character.class) || fieldType.equals(char.class)) {
-            return charToBytes((char) fieldValue);
-        } else if (fieldType.equals(Byte.class) || fieldType.equals(byte.class)) {
-            return new byte[]{ (byte) fieldValue };
-        } else if (fieldType.equals(String.class)) {
-            return stringToBytes((String) fieldValue);
-        } else if (fieldType.equals(HasdSerializable.class)) {
-            return hasdSerializableToBytes((HasdSerializable) fieldValue);
-        } else {
-            throw new CannotSerializeFieldException("Cannot serialize field with type " + fieldType.getName());
-        }
-    }
-
-    private int getTotalFieldsLength(List<byte[]> serializedFields) {
-        return serializedFields.stream()
-                .map(fieldBytes -> fieldBytes.length)
-                .reduce(Integer::sum).get();
-    }
-
-    private byte[] flattenSerializedFields(List<byte[]> serializedFields) {
-        byte[] serializedObject = new byte[getTotalFieldsLength(serializedFields)];
-        int copyPosition = 0;
-        for (byte[] serializedField : serializedFields) {
-            System.arraycopy(serializedField, 0, serializedObject, copyPosition, serializedField.length);
-            copyPosition += serializedField.length;
-        }
-        return serializedObject;
-    }
-
-    @Override
-    public byte[] serializeWithoutHeaders() {
-        Field[] fields = this.getClass().getDeclaredFields();
-        List<byte[]> serializedFields = new ArrayList<>();
-        for (Field field : fields) {
-            if (Modifier.isStatic(field.getModifiers()) || Modifier.isTransient(field.getModifiers())) {
-                continue;
-            }
-            field.setAccessible(true);
-            Class fieldType = field.getType();
-            try {
-                Object fieldValue = field.get(this);
-                if (fieldValue != null){
-                    serializedFields.add(serializeField(fieldType, fieldValue));
-                }
-            } catch (IllegalAccessException | CannotSerializeFieldException e) {
-                System.out.println(e.getMessage());
-            }
-        }
-        return flattenSerializedFields(serializedFields);
-    }
-
-    @Override
-    public byte[] serialize() {
-        byte[] fileHeader = fileHeaderToBytes();
-        byte[] body = serializeWithoutHeaders();
-        byte[] result = new byte[fileHeader.length + body.length];
-        System.arraycopy(fileHeader, 0, result, 0, fileHeader.length);
-        System.arraycopy(body, 0, result, fileHeader.length, body.length);
-        return result;
-    }
-
-    @Override
-    public void writeToFile(String path) throws IOException {
-        FileOutputStream fos = new FileOutputStream(path);
-        fos.write(this.serialize());
     }
 
     @Override
