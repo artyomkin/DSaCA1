@@ -8,23 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class ToBytesConverter {
-
-    protected static byte[] insertLength(byte[] bytes){
-        byte[] lengthValue = Varint.encodeInt(bytes.length);
-        byte[] result = new byte[lengthValue.length + bytes.length];
-        System.arraycopy(lengthValue, 0, result, 0, lengthValue.length);
-        System.arraycopy(bytes, 0, result, lengthValue.length, bytes.length);
-        return result;
-    }
-
-    private static byte[] hasdSerializableToBytes(HasdSerializable hasdSerializable){
-        return insertLength(hasdSerializable.serializeWithoutHeaders());
-    }
-
-    private static byte[] stringToBytes(String str) {
-        return insertLength(str.getBytes());
-    }
+public class Serializer {
 
     private static int getTotalFieldsLength(List<byte[]> serializedFields) {
         return serializedFields.stream()
@@ -71,6 +55,14 @@ public class ToBytesConverter {
        ));
     }
 
+    protected static byte[] insertLength(byte[] bytes){
+        byte[] lengthValue = Varint.encodeInt(bytes.length);
+        byte[] result = new byte[lengthValue.length + bytes.length];
+        System.arraycopy(lengthValue, 0, result, 0, lengthValue.length);
+        System.arraycopy(bytes, 0, result, lengthValue.length, bytes.length);
+        return result;
+    }
+
     protected static byte[] serializeObject(Object object) throws CannotSerializeFieldException{
         Class<?> clazz = object.getClass();
         if (clazz.equals(Boolean.class) || clazz.equals(boolean.class)) {
@@ -90,13 +82,13 @@ public class ToBytesConverter {
         } else if (clazz.equals(Byte.class) || clazz.equals(byte.class)) {
             return new byte[]{ (byte) object };
         } else if (clazz.equals(String.class)) {
-            return stringToBytes((String) object);
+            return insertLength(((String) object).getBytes());
         } else if (object instanceof List<?>){
             return listToBytes((List<?>) object);
         } else if (object instanceof HashMap<?,?>){
             return mapToBytes((HashMap<?,?>) object);
         } else if (object instanceof HasdSerializable) {
-            return hasdSerializableToBytes((HasdSerializable) object);
+            return insertLength(((HasdSerializable) object).serialize());
         } else {
             throw new CannotSerializeFieldException("Cannot serialize field with type " + clazz.getName());
         }
