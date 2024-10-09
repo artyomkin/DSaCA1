@@ -7,23 +7,20 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class HasdSerializableImpl implements HasdSerializable {
 
-    private static final String SERIALIZATION_PROTOCOL_NAME = "TEAA";
-    private static final int SERIALIZATION_PROTOCOL_MAJOR_VERSION = 0;
-    private static final int SERIALIZATION_PROTOCOL_MINOR_VERSION = 0;
-    private static final int SERIALIZATION_PROTOCOL_PATCH_VERSION = 1;
-    private static final byte[] serializationProtocolName = SERIALIZATION_PROTOCOL_NAME.getBytes();
-    private static final byte[] serializationMajorVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_MAJOR_VERSION);
-    private static final byte[] serializationMinorVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_MINOR_VERSION);
-    private static final byte[] serializationPatchVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_PATCH_VERSION);
-    private static final List<byte[]> defaultHeaders = List.of(
+    private static String SERIALIZATION_PROTOCOL_NAME = "TEAA";
+    private static int SERIALIZATION_PROTOCOL_MAJOR_VERSION = 0;
+    private static int SERIALIZATION_PROTOCOL_MINOR_VERSION = 0;
+    private static int SERIALIZATION_PROTOCOL_PATCH_VERSION = 1;
+    private static byte[] serializationProtocolName = SERIALIZATION_PROTOCOL_NAME.getBytes();
+    private static byte[] serializationMajorVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_MAJOR_VERSION);
+    private static byte[] serializationMinorVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_MINOR_VERSION);
+    private static byte[] serializationPatchVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_PATCH_VERSION);
+    private static List<byte[]> defaultHeaders = List.of(
             serializationProtocolName,
             serializationMajorVersion,
             serializationMinorVersion,
@@ -34,7 +31,9 @@ public class HasdSerializableImpl implements HasdSerializable {
     public byte[] serializeWithoutHeaders() {
         Field[] fields = this.getClass().getDeclaredFields();
         List<byte[]> serializedFields = new ArrayList<>();
-        for (Field field : fields) {
+        List<Integer> nullFieldsList = new ArrayList<>();
+        for (int i = 0; i < fields.length; i++) {
+            Field field = fields[i];
             if (Modifier.isStatic(field.getModifiers()) || Modifier.isTransient(field.getModifiers())) {
                 continue;
             }
@@ -43,11 +42,18 @@ public class HasdSerializableImpl implements HasdSerializable {
                 Object fieldValue = field.get(this);
                 if (fieldValue != null){
                     serializedFields.add(BytesConverter.serializeObject(fieldValue));
+                } else {
+                    nullFieldsList.add(i);
                 }
             } catch (IllegalAccessException | CannotSerializeFieldException e) {
                 System.out.println(e.getMessage());
             }
         }
+        byte[] nullFields = new byte[nullFieldsList.size()];
+        for (int i = 0; i < nullFieldsList.size(); i++){
+            nullFields[i] = nullFieldsList.get(i).byteValue();
+        }
+        serializedFields.add(0, BytesConverter.insertLength(nullFields));
         return BytesConverter.flattenBytes(serializedFields);
     }
 

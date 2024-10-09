@@ -1,16 +1,8 @@
 package classes;
 
-import com.github.fluency03.varint.Varint;
-import exceptions.CannotSerializeFieldException;
-
 import java.io.*;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class Person extends HasdSerializableImpl {
     private String name;
@@ -46,6 +38,7 @@ public class Person extends HasdSerializableImpl {
         this.stringVals = builder.stringVals;
         this.mapVals = builder.mapVals;
     }
+
 
     @Override
     public String toString(){

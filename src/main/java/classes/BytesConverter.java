@@ -39,7 +39,7 @@ public class BytesConverter {
     }
 
 
-    private static byte[] insertLength(byte[] bytes){
+    protected static byte[] insertLength(byte[] bytes){
         byte[] lengthValue = Varint.encodeInt(bytes.length);
         byte[] result = new byte[lengthValue.length + bytes.length];
         System.arraycopy(lengthValue, 0, result, 0, lengthValue.length);
