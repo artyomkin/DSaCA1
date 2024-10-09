@@ -41,7 +41,7 @@ public class HasdSerializableImpl implements HasdSerializable {
             try {
                 Object fieldValue = field.get(this);
                 if (fieldValue != null){
-                    serializedFields.add(BytesConverter.serializeObject(fieldValue));
+                    serializedFields.add(ToBytesConverter.serializeObject(fieldValue));
                 } else {
                     nullFieldsList.add(i);
                 }
@@ -53,13 +53,13 @@ public class HasdSerializableImpl implements HasdSerializable {
         for (int i = 0; i < nullFieldsList.size(); i++){
             nullFields[i] = nullFieldsList.get(i).byteValue();
         }
-        serializedFields.add(0, BytesConverter.insertLength(nullFields));
-        return BytesConverter.flattenBytes(serializedFields);
+        serializedFields.add(0, ToBytesConverter.insertLength(nullFields));
+        return ToBytesConverter.flattenBytes(serializedFields);
     }
 
     @Override
     public byte[] serialize() {
-        byte[] fileHeader = BytesConverter.flattenBytes(defaultHeaders);
+        byte[] fileHeader = ToBytesConverter.flattenBytes(defaultHeaders);
         byte[] body = serializeWithoutHeaders();
         byte[] result = new byte[fileHeader.length + body.length];
         System.arraycopy(fileHeader, 0, result, 0, fileHeader.length);
