@@ -9,21 +9,20 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class HasdSerializableImpl implements HasdSerializable {
 
-    private static String SERIALIZATION_PROTOCOL_NAME = "TEAA";
-    private static int SERIALIZATION_PROTOCOL_MAJOR_VERSION = 0;
-    private static int SERIALIZATION_PROTOCOL_MINOR_VERSION = 0;
-    private static int SERIALIZATION_PROTOCOL_PATCH_VERSION = 1;
-    private static byte[] serializationProtocolName = SERIALIZATION_PROTOCOL_NAME.getBytes();
-    private static byte[] serializationMajorVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_MAJOR_VERSION);
-    private static byte[] serializationMinorVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_MINOR_VERSION);
-    private static byte[] serializationPatchVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_PATCH_VERSION);
-    private static List<byte[]> defaultHeaders = List.of(
+    public static final String SERIALIZATION_PROTOCOL_NAME = "TEAA";
+    public static final int SERIALIZATION_PROTOCOL_MAJOR_VERSION = 0;
+    public static final int SERIALIZATION_PROTOCOL_MINOR_VERSION = 0;
+    public static final int SERIALIZATION_PROTOCOL_PATCH_VERSION = 1;
+    private static final byte[] serializationProtocolName = SERIALIZATION_PROTOCOL_NAME.getBytes();
+    private static final byte[] serializationMajorVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_MAJOR_VERSION);
+    private static final byte[] serializationMinorVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_MINOR_VERSION);
+    private static final byte[] serializationPatchVersion = Varint.encodeInt(SERIALIZATION_PROTOCOL_PATCH_VERSION);
+    private static final List<byte[]> defaultHeaders = List.of(
             serializationProtocolName,
             serializationMajorVersion,
             serializationMinorVersion,
@@ -104,9 +103,9 @@ public class HasdSerializableImpl implements HasdSerializable {
     public HasdSerializable deserialize(byte[] serializedObject){
         List<Field> allFields = getAllFields();
         int pointer = 0;
-        //while (pointer < serializedObject.length) {
-        //
-        //}
+        while (pointer < serializedObject.length) {
+            // тут должен быть проход по об
+        }
         return null;
     }
 
