@@ -27,39 +27,51 @@ public class Serializer {
     }
 
     private static byte[] listToBytes(List<?> list) {
-        return insertLength(flattenBytes(
-                list.stream()
-                    .map(item -> {
-                        try {
-                            return serializeObject(item);
-                        } catch (CannotSerializeFieldException e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-                    .toList()
-        ));
+        byte[] listBytes = flattenBytes(list.stream()
+                        .map(item -> {
+                            try {
+                                return serializeObject(item);
+                            } catch (CannotSerializeFieldException e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
+                        .toList());
+        if (!list.isEmpty()){
+            listBytes = insertToBeginning(new byte[] { TypeCodes.getTypeCode(list.get(0).getClass()) }, listBytes);
+        }
+        return insertLength(listBytes);
     }
 
     private static byte[] mapToBytes(HashMap<?, ?> map){
-       return insertLength(flattenBytes(
-               map.entrySet().stream()
-                    .flatMap(entry -> Stream.of(entry.getKey(), entry.getValue()))
-                    .map(item -> {
-                        try {
-                            return serializeObject(item);
-                        } catch (CannotSerializeFieldException e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-                    .toList()
-       ));
+        byte[] mapBytes = flattenBytes(
+                map.entrySet().stream()
+                        .flatMap(entry -> Stream.of(entry.getKey(), entry.getValue()))
+                        .map(item -> {
+                            try {
+                                return serializeObject(item);
+                            } catch (CannotSerializeFieldException e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
+                        .toList());
+        if (!map.isEmpty()){
+            Class<?> keyClass = map.entrySet().iterator().next().getKey().getClass();
+            Class<?> valClass = map.entrySet().iterator().next().getValue().getClass();
+            mapBytes = insertToBeginning(new byte[] { TypeCodes.getTypeCode(valClass) }, mapBytes);
+            mapBytes = insertToBeginning(new byte[] { TypeCodes.getTypeCode(keyClass) }, mapBytes);
+        }
+        return insertLength(mapBytes);
     }
 
     protected static byte[] insertLength(byte[] bytes){
         byte[] lengthValue = Varint.encodeInt(bytes.length);
-        byte[] result = new byte[lengthValue.length + bytes.length];
-        System.arraycopy(lengthValue, 0, result, 0, lengthValue.length);
-        System.arraycopy(bytes, 0, result, lengthValue.length, bytes.length);
+        return insertToBeginning(lengthValue, bytes);
+    }
+
+    protected static byte[] insertToBeginning(byte[] beginning, byte[] bytes){
+        byte[] result = new byte[beginning.length + bytes.length];
+        System.arraycopy(beginning, 0, result, 0, beginning.length);
+        System.arraycopy(bytes, 0, result, beginning.length, bytes.length);
         return result;
     }
 

@@ -89,7 +89,7 @@ public class Deserializer {
         return null;
     }
 
-    private Object deserializeNextValue(Class<?> fieldType, Field field, Object o) throws IllegalAccessException {
+    private Object deserializeNextValue(Class<?> fieldType) throws IllegalAccessException {
         if (fieldType.equals(boolean.class) || fieldType.equals(Boolean.class)) {
             return nextByte(this.bytes) != 0;
         } else if (fieldType.equals(byte.class) || fieldType.equals(Byte.class)) {
@@ -109,7 +109,7 @@ public class Deserializer {
         } else if (fieldType.equals(String.class)) {
             return deserializeNextString();
         //} else if (List.class.isAssignableFrom(fieldType)) {
-        //    List val = ((List) field.get(o)).;
+        //    Class<List> listClass = List.class;
         //    return deserializeNextList();
         //} else if (Map.class.isAssignableFrom(fieldType) || HashMap.class.isAssignableFrom(fieldType)) {
         //    return deserializeMap(buffer);
