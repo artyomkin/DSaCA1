@@ -1,35 +1,49 @@
+import classes.HasdSerializable;
 import classes.Person;
-import com.github.fluency03.varint.Varint;
-import org.apache.maven.profiles.activation.SystemPropertyProfileActivator;
-import scala.Tuple2;
 
 import java.io.*;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.sql.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 public class Main {
-    public static void main(String... args) throws IOException, IllegalAccessException, NoSuchFieldException {
-        List<Integer> l = List.of(1,2,3,4,5);
-        //List<String> s = List.of("l1", "l2", "l3", "l4");
-        //HashMap<Integer, String> m = new HashMap<Integer, String>();
-        //m.put(1, "hashmap-item1");
-        //m.put(2, "hashmap-item2");
-        //m.put(3, "hashmap-item3");
-        //Person p = new Person.Builder()
-        //        .setIntVals(l)
-        //        .setStringVals(s)
-        //        .setMapVals(m)
-        //        .build();
-        //p.writeToFile("./serialized-person");
-        //FileInputStream fis = new FileInputStream("./serialized-person");
-        //byte[] bytes = fis.readAllBytes();
-        //for (byte b : bytes){
-        //       System.out.println("byte: " + b);
-        //}
+    public static void main(String... args) throws IOException, IllegalAccessException, NoSuchFieldException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException {
+
+        // инициализация тестовых значений
+        HashMap<Integer, String> m = new HashMap<Integer, String>();
+        m.put(1, "hashmap-item1");
+        m.put(2, "hashmap-item2");
+        m.put(3, "hashmap-item3");
+
+        ArrayList<String> s = new ArrayList();
+        s.add("l1");
+        s.add("l2");
+
+        Person c = new Person.Builder()
+                .setName("child")
+                .setAge(10)
+                .setLastName("childLastName")
+                .setMapVals(m)
+                .build();
+
+        Person p = new Person.Builder()
+                .setName("artyom")
+                .setLastName("artyomkin")
+                .setAge(22)
+                .setHeight(185)
+                .setStringVals(s)
+                .setChildPerson(c)
+                .build();
+        // Добавить List<Person> внутрь p
+        p.setEmbeddedVals();
+
+        // сериализация
+        p.writeToFile("./serialized-person");
+
+        // десериализация
+        Person deserializedPerson = (Person) HasdSerializable.readFromFile("./serialized-person", Person.class);
+
+        // вывод информации
+        System.out.println(deserializedPerson);
     }
 }

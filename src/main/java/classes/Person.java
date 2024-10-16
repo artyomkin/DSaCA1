@@ -1,25 +1,31 @@
 package classes;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 public class Person extends HasdSerializableImpl {
     private String name;
     private String lastName;
-    private int age;
+    private Integer age;
     private Integer height;
-    private short shortVal;
-    private byte byteVal;
-    private long longVal;
-    private double doubleVal;
-    private float floatVal;
-    private boolean booleanVal;
-    private char charVal;
+    private Short shortVal;
+    private Byte byteVal;
+    private Long longVal;
+    private Double doubleVal;
+    private Float floatVal;
+    private Boolean booleanVal;
+    private Character charVal;
     private HasdSerializable childPerson;
-    private List<Integer> intVals;
-    private List<String> stringVals;
+    private ArrayList<Integer> intVals;
+    public ArrayList<HasdSerializable> embeddedVals;
+    private ArrayList<String> stringVals;
     private HashMap<Integer, String> mapVals;
+
+    public Person(){
+        this.name = "test";
+    }
 
     public Person(Builder builder) {
         this.name = builder.name;
@@ -39,18 +45,37 @@ public class Person extends HasdSerializableImpl {
         this.mapVals = builder.mapVals;
     }
 
+    public String getName(){
+        return this.name;
+    }
+
+    public void setEmbeddedVals(){
+        this.embeddedVals = new ArrayList<>(List.of(
+                new Person.Builder().setAge(12).build(),
+                new Person.Builder().setAge(13).build(),
+                new Person.Builder().setAge(14).build()
+        ));
+    }
 
     @Override
     public String toString(){
-        String report = String.format("person:\n" +
+        String report = String.format("\nperson:\n" +
                 "name: %s;\n" +
                 "lastName: %s;\n" +
                 "age: %d;\n" +
-                "height: %d;\n",
+                "height: %d;",
                 this.name,
                 this.lastName,
                 this.age,
                 this.height);
+        if (this.stringVals != null) report += "\nstringVals: " + this.stringVals;
+        if (this.childPerson != null) report += "\n\nchild: " + this.childPerson.toString();
+        if (this.mapVals != null) report += "\nmapVals: " + this.mapVals.toString();
+        if (this.embeddedVals != null) {
+            for (HasdSerializable val : embeddedVals){
+                report += val.toString();
+            }
+        }
         return report;
     }
 
@@ -67,8 +92,8 @@ public class Person extends HasdSerializableImpl {
         private boolean booleanVal;
         private char charVal;
         private HasdSerializable childPerson;
-        private List<Integer> intVals;
-        private List<String> stringVals;
+        private ArrayList<Integer> intVals;
+        private ArrayList<String> stringVals;
         private HashMap<Integer, String> mapVals;
 
         public Builder setName(String name) {
@@ -131,12 +156,12 @@ public class Person extends HasdSerializableImpl {
             return this;
         }
 
-        public Builder setIntVals(List<Integer> intVals){
+        public Builder setIntVals(ArrayList<Integer> intVals){
             this.intVals = intVals;
             return this;
         }
 
-        public Builder setStringVals(List<String> stringVals){
+        public Builder setStringVals(ArrayList<String> stringVals){
             this.stringVals = stringVals;
             return this;
         }
@@ -148,18 +173,6 @@ public class Person extends HasdSerializableImpl {
 
         public Person build() {
             return new Person(this);
-        }
-
-        public Person deserialize(byte[] serializedPerson){
-            // Здесь должен генерироваться код десериализации объекта из байтов
-            return null;
-        }
-
-        public Person readFromFile(String path) throws IOException {
-            FileInputStream fis = new FileInputStream(path);
-            Person person = deserialize(fis.readAllBytes());
-            fis.close();
-            return person;
         }
 
     }
